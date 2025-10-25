@@ -78,21 +78,21 @@ class TextChunker:
             if sentence_word_count > self.chunk_size_words:
                 # Save current chunk if it exists
                 if current_chunk_words:
-                    chunks.append(''.join(current_chunk_words).strip())
+                    chunks.append(' '.join(current_chunk_words).strip())
                     current_chunk_words = []
                     current_word_count = 0
-                
+
                 # Split large sentence into chunks
                 for i in range(0, sentence_word_count, self.chunk_size_words - self.overlap_words):
                     chunk_words = sentence_words[i:i + self.chunk_size_words]
-                    chunks.append(''.join(chunk_words).strip())
+                    chunks.append(' '.join(chunk_words).strip())
                 continue
             
             # Check if adding this sentence would exceed chunk size
             if current_word_count + sentence_word_count > self.chunk_size_words:
                 # Save current chunk
                 if current_chunk_words:
-                    chunks.append(''.join(current_chunk_words).strip())
+                    chunks.append(' '.join(current_chunk_words).strip())
                 
                 # Start new chunk with overlap from previous chunk
                 if self.overlap_words > 0 and current_chunk_words:
@@ -110,7 +110,7 @@ class TextChunker:
         
         # Add final chunk
         if current_chunk_words:
-            chunks.append(''.join(current_chunk_words).strip())
+            chunks.append(' '.join(current_chunk_words).strip())
         
         logger.info(f"Text chunked into {len(chunks)} chunks")
         return chunks
