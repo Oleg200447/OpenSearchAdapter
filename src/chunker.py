@@ -117,20 +117,17 @@ class TextChunker:
     
     def _split_into_sentences(self, text: str) -> List[str]:
         """
-        Split text into sentences.
-        
-        Args:
-            text: Input text
-            
-        Returns:
-            List of sentences
+        Split text into sentences, keeping terminating punctuation.
         """
-        # Split by sentence boundaries
-        sentences = self.sentence_pattern.split(text)
-        
-        # Clean and filter empty sentences
-        sentences = [s.strip() for s in sentences if s.strip()]
-        
+        sentences = []
+        current = ""
+        for part in re.split(r'([.!?]+[\s\n]+)', text):
+            current += part
+            if re.search(r'[.!?]+\s*$', current):
+                sentences.append(current.strip())
+                current = ""
+        if current and current.strip():
+            sentences.append(current.strip())
         return sentences
 
 
