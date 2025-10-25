@@ -1,7 +1,7 @@
 """OpenSearch client for index management and document operations."""
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from opensearchpy import AsyncOpenSearch, helpers
+from opensearchpy import OpenSearch, helpers
 from src.config import settings
 from src.logger import logger
 from src.models import ChunkWithEmbedding
@@ -18,7 +18,7 @@ class OpenSearchClient:
         self.client = None
         self.embedding_dimension = settings.embedding_dimension
         
-    async def connect(self) -> bool:
+    def connect(self) -> bool:
         """
         Connect to OpenSearch cluster.
         
@@ -26,7 +26,7 @@ class OpenSearchClient:
             True if connection successful, False otherwise
         """
         try:
-            self.client = AsyncOpenSearch(
+            self.client = OpenSearch(
                 hosts=[{
                     'host': settings.opensearch_host,
                     'port': settings.opensearch_port
@@ -38,7 +38,7 @@ class OpenSearchClient:
             )
             
             # Test connection
-            info = await self.client.info()
+            info = self.client.info()
             logger.info(f"Connected to OpenSearch cluster: {info['version']['number']}")
             return True
             
@@ -46,10 +46,10 @@ class OpenSearchClient:
             logger.error(f"Failed to connect to OpenSearch: {e}")
             return False
     
-    async def close(self):
+    def close(self):
         """Close OpenSearch connection."""
         if self.client:
-            await self.client.close()
+            self.client.close()
             logger.info("OpenSearch connection closed")
     
     def _get_index_name(self, topic_type: str, topic_name: str, user_id: Optional[str] = None) -> str:
@@ -69,7 +69,7 @@ class OpenSearchClient:
         else:
             return f"user_{user_id}_topic"
     
-    async def create_index(
+    def create_index(
         self,
         index_name: str,
         embedding_dimension: int = None
@@ -88,7 +88,7 @@ class OpenSearchClient:
         
         # Check if index already exists
         try:
-            exists = await self.client.indices.exists(index=index_name)
+            exists = self.client.indices.exists(index=index_name)
             if exists:
                 logger.info(f"Index {index_name} already exists")
                 return True
@@ -149,14 +149,14 @@ class OpenSearchClient:
         }
         
         try:
-            await self.client.indices.create(index=index_name, body=index_body)
+            self.client.indices.create(index=index_name, body=index_body)
             logger.info(f"Created index: {index_name}")
             return True
         except Exception as e:
             logger.error(f"Failed to create index {index_name}: {e}")
             return False
     
-    async def ensure_index_exists(
+    def ensure_index_exists(
         self,
         topic_type: str,
         topic_name: str,
@@ -176,11 +176,11 @@ class OpenSearchClient:
         index_name = self._get_index_name(topic_type, topic_name, user_id)
         
         # Create index if it doesn't exist
-        await self.create_index(index_name)
+        self.create_index(index_name)
         
         return index_name
     
-    async def index_chunks(
+    def index_chunks(
         self,
         chunks: List[ChunkWithEmbedding],
         index_name: str
@@ -220,8 +220,8 @@ class OpenSearchClient:
             actions.append(action)
         
         try:
-            # Bulk index with async helper
-            success, failed = await helpers.async_bulk(
+            # Bulk index with synchronous helper
+            success, failed = helpers.bulk(
                 self.client,
                 actions,
                 raise_on_error=False,
@@ -240,7 +240,7 @@ class OpenSearchClient:
             logger.error(f"Error during bulk indexing: {e}")
             return False
     
-    async def create_system_indices(self) -> bool:
+    def create_system_indices(self) -> bool:
         """
         Create all system topic indices.
         
@@ -252,7 +252,7 @@ class OpenSearchClient:
         
         for topic_name in system_topics:
             index_name = f"system_{topic_name}"
-            success = await self.create_index(index_name)
+            success = self.create_index(index_name)
             if not success:
                 all_success = False
                 logger.error(f"Failed to create system index: {index_name}")

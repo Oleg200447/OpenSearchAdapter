@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     
     # Connect to OpenSearch
     logger.info("Connecting to OpenSearch...")
-    opensearch_connected = await opensearch_client.connect()
+    opensearch_connected = await asyncio.to_thread(opensearch_client.connect)
     if not opensearch_connected:
         logger.error("Failed to connect to OpenSearch. Exiting...")
         raise Exception("OpenSearch connection failed")
@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
     
     # Create system indices
     logger.info("Creating system topic indices...")
-    system_indices_created = await opensearch_client.create_system_indices()
+    system_indices_created = await asyncio.to_thread(opensearch_client.create_system_indices)
     if not system_indices_created:
         logger.warning("Some system indices failed to create, but continuing...")
     
@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
         consumer_task.cancel()
     
     # Close OpenSearch connection
-    await opensearch_client.close()
+    await asyncio.to_thread(opensearch_client.close)
     
     logger.info("OpenSearch Adapter service stopped")
 

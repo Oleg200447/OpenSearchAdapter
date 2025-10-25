@@ -84,6 +84,61 @@ docker logs -f opensearch_adapter
 curl http://localhost:8005/health
 ```
 
+## Быстрый старт
+
+### Предварительные требования
+
+Перед запуском убедитесь, что в сети `test_network` запущены:
+- **Kafka** (kafka:9092)
+- **OpenSearch** (opensearch:9200)
+- **vLLM Embedding Server** (embedding_server:8000)
+
+### Проверка работы
+
+После запуска контейнера проверьте логи:
+
+```bash
+docker logs opensearch_adapter
+```
+
+Вы должны увидеть:
+- ✅ Connected to OpenSearch cluster
+- ✅ Embedding service connection successful
+- ✅ System index ready
+- ✅ Kafka consumer started
+
+### Отправка тестового сообщения
+
+Используйте тестовый скрипт:
+
+```bash
+pip install kafka-python
+python test_kafka_producer.py
+```
+
+### Проверка индексации
+
+```bash
+# Просмотр логов обработки
+docker logs opensearch_adapter | grep "Successfully processed"
+
+# Проверка индексов
+curl -k -u admin:our_password https://localhost:9200/_cat/indices?v
+
+# Поиск в индексе пользователя
+curl -k -u admin:our_password https://localhost:9200/user_user_123_topic/_search?pretty
+```
+
+### Остановка сервиса
+
+```bash
+# Остановить контейнер
+docker-compose down
+
+# Остановить и удалить данные
+docker-compose down -v
+```
+
 ## Конфигурация
 
 Основные параметры в `.env`:

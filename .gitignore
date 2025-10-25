@@ -62,3 +62,6 @@ logs/
 
 # Docker
 *.pid
+
+test_embedder.py
+test_kafka_producer.py

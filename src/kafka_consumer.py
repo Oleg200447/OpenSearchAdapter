@@ -141,14 +141,16 @@ class DocumentProcessor:
                 chunks_with_embeddings.append(chunk_with_emb)
             
             # Step 5: Ensure index exists
-            index_name = await opensearch_client.ensure_index_exists(
+            index_name = await asyncio.to_thread(
+                opensearch_client.ensure_index_exists,
                 topic_type=kafka_msg.topic_type,
                 topic_name=kafka_msg.topic_name,
                 user_id=kafka_msg.user_id
             )
             
             # Step 6: Index chunks into OpenSearch
-            success = await opensearch_client.index_chunks(
+            success = await asyncio.to_thread(
+                opensearch_client.index_chunks,
                 chunks=chunks_with_embeddings,
                 index_name=index_name
             )

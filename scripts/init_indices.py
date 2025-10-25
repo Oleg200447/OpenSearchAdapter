@@ -16,13 +16,13 @@ async def init_system_indices():
     logger.info("Starting system indices initialization...")
     
     # Connect to OpenSearch
-    connected = await opensearch_client.connect()
+    connected = await asyncio.to_thread(opensearch_client.connect)
     if not connected:
         logger.error("Failed to connect to OpenSearch")
         return False
     
     # Create system indices
-    success = await opensearch_client.create_system_indices()
+    success = await asyncio.to_thread(opensearch_client.create_system_indices)
     
     if success:
         logger.info("All system indices initialized successfully")
@@ -30,7 +30,7 @@ async def init_system_indices():
         logger.error("Some indices failed to initialize")
     
     # Close connection
-    await opensearch_client.close()
+    await asyncio.to_thread(opensearch_client.close)
     
     return success
 

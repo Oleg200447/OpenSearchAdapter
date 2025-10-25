@@ -6,39 +6,6 @@ services:
     container_name: opensearch_adapter
     networks:
       - test_network
-    environment:
-      # Kafka Configuration
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - KAFKA_TOPIC=documents
-      - KAFKA_GROUP_ID=opensearch_adapter_group
-      
-      # OpenSearch Configuration
-      - OPENSEARCH_HOST=opensearch
-      - OPENSEARCH_PORT=9200
-      - OPENSEARCH_USER=admin
-      - OPENSEARCH_PASSWORD=our_password
-      - OPENSEARCH_USE_SSL=true
-      - OPENSEARCH_VERIFY_CERTS=false
-      
-      # Embedding Service Configuration
-      - EMBEDDING_SERVICE_URL=http://embedding_server:8000
-      - EMBEDDING_MODEL=google/embeddinggemma-300m
-      - EMBEDDING_DIMENSION=256
-      - EMBEDDING_BATCH_SIZE=10
-      
-      # Chunking Configuration
-      - CHUNK_SIZE_WORDS=1400
-      - CHUNK_OVERLAP_WORDS=150
-      
-      # System Topics
-      - SYSTEM_TOPICS=topic_1,topic_2,topic_3,topic_4,topic_5
-      
-      # Logging
-      - LOG_LEVEL=INFO
-    depends_on:
-      - kafka
-      - opensearch
-      - embedding_server
     restart: unless-stopped
     ports:
       - "8005:8000"  # Optional: expose health check endpoint

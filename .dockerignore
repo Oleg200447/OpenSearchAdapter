@@ -52,5 +52,3 @@ docker-compose.yml
 # Test files
 test_*.py
 
-# Environment
-.env

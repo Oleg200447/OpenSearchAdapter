@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     opensearch_host: str = "opensearch"
     opensearch_port: int = 9200
     opensearch_user: str = "admin"
-    opensearch_password: str = "our_password"
+    opensearch_password: str = "Our password"
     opensearch_use_ssl: bool = True
     opensearch_verify_certs: bool = False
     
