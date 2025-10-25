@@ -114,7 +114,6 @@ class OpenSearchClient:
                         "dimension": embedding_dimension,
                         "method": {
                             "name": "hnsw",
-                            "engine": "nmslib",
                             "space_type": "cosinesimil",
                             "parameters": {
                                 "m": 48,

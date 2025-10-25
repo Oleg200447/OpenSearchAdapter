@@ -74,6 +74,8 @@ docker network create test_network
 docker-compose up -d --build
 ```
 
+**Примечание:** Все системные индексы создаются автоматически при старте сервиса. Не требуется запускать дополнительные скрипты инициализации.
+
 ### 5. Проверьте статус
 
 ```bash
@@ -104,7 +106,7 @@ docker logs opensearch_adapter
 Вы должны увидеть:
 - ✅ Connected to OpenSearch cluster
 - ✅ Embedding service connection successful
-- ✅ System index ready
+- ✅ All system indices initialized successfully (системные индексы создаются автоматически)
 - ✅ Kafka consumer started
 
 ### Отправка тестового сообщения
@@ -200,7 +202,7 @@ docker-compose down -v
 
 ### Системные индексы
 
-Создаются автоматически при старте:
+Создаются **автоматически при старте сервиса** (не требуется запуск дополнительных скриптов):
 - `system_topic_1`
 - `system_topic_2`
 - `system_topic_3`
@@ -209,7 +211,7 @@ docker-compose down -v
 
 ### Пользовательские индексы
 
-Создаются динамически при первом документе:
+Создаются **динамически при первом документе пользователя**:
 - `user_{user_id}_topic`
 
 ### Структура индекса
