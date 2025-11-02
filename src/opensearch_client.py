@@ -125,6 +125,9 @@ class OpenSearchClient:
             "document_url": {
                 "type": "keyword"
             },
+            "upload_time":{
+                "type":"date"
+            },
             "metadata": {
                 "type": "object",
                 "enabled": True
@@ -134,9 +137,6 @@ class OpenSearchClient:
         # Add user-specific fields for user indices
         if not index_name.startswith("system_"):
             properties["user_id"] = {"type": "keyword"}
-            properties["user_upload_time"] = {"type": "date"}
-        else:
-            properties["upload_time"] = {"type": "date"}
         
         # Index configuration
         index_body = {

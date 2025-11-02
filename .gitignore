@@ -66,3 +66,4 @@ logs/
 
 test_embedder.py
 test_kafka_producer.py
+test_large_system_topics.py
