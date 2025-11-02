@@ -95,6 +95,49 @@ class OpenSearchClient:
         except Exception as e:
             logger.error(f"Error checking index existence: {e}")
         
+        # Base properties
+        properties = {
+            "text": {
+                "type": "text",
+                "analyzer": "standard"
+            },
+            "embedding": {
+                "type": "knn_vector",
+                "dimension": embedding_dimension,
+                "method": {
+                    "name": "hnsw",
+                    "space_type": "cosinesimil",
+                    "parameters": {
+                        "m": 48,
+                        "ef_construction": 256
+                    }
+                }
+            },
+            "doc_id": {
+                "type": "keyword"
+            },
+            "chunk_id": {
+                "type": "integer"
+            },
+            "source_type": {
+                "type": "keyword"
+            },
+            "document_url": {
+                "type": "keyword"
+            },
+            "metadata": {
+                "type": "object",
+                "enabled": True
+            }
+        }
+        
+        # Add user-specific fields for user indices
+        if not index_name.startswith("system_"):
+            properties["user_id"] = {"type": "keyword"}
+            properties["user_upload_time"] = {"type": "date"}
+        else:
+            properties["upload_time"] = {"type": "date"}
+        
         # Index configuration
         index_body = {
             "settings": {
@@ -104,46 +147,7 @@ class OpenSearchClient:
                 }
             },
             "mappings": {
-                "properties": {
-                    "text": {
-                        "type": "text",
-                        "analyzer": "standard"
-                    },
-                    "embedding": {
-                        "type": "knn_vector",
-                        "dimension": embedding_dimension,
-                        "method": {
-                            "name": "hnsw",
-                            "space_type": "cosinesimil",
-                            "parameters": {
-                                "m": 48,
-                                "ef_construction": 256
-                            }
-                        }
-                    },
-                    "doc_id": {
-                        "type": "keyword"
-                    },
-                    "chunk_id": {
-                        "type": "integer"
-                    },
-                    "user_id": {
-                        "type": "keyword"
-                    },
-                    "source_type": {
-                        "type": "keyword"
-                    },
-                    "document_url": {
-                        "type": "keyword"
-                    },
-                    "user_upload_time": {
-                        "type": "date"
-                    },
-                    "metadata": {
-                        "type": "object",
-                        "enabled": True
-                    }
-                }
+                "properties": properties
             }
         }
         
@@ -199,22 +203,30 @@ class OpenSearchClient:
             return True
         
         # Prepare bulk actions
+        is_system = index_name.startswith("system_")
         actions = []
         for chunk in chunks:
+            # Base source
+            source = {
+                "text": chunk.text,
+                "embedding": chunk.embedding,
+                "doc_id": chunk.doc_id,
+                "chunk_id": chunk.chunk_id,
+                "source_type": chunk.source_type,
+                "document_url": chunk.document_url,
+                "metadata": chunk.metadata
+            }
+            
+            if is_system:
+                source["upload_time"] = chunk.user_upload_time.isoformat() if chunk.user_upload_time else None
+            else:
+                source["user_id"] = chunk.user_id
+                source["user_upload_time"] = chunk.user_upload_time.isoformat() if chunk.user_upload_time else None
+            
             action = {
                 "_index": index_name,
                 "_id": f"{chunk.doc_id}_{chunk.chunk_id}",
-                "_source": {
-                    "text": chunk.text,
-                    "embedding": chunk.embedding,
-                    "doc_id": chunk.doc_id,
-                    "chunk_id": chunk.chunk_id,
-                    "user_id": chunk.user_id,
-                    "source_type": chunk.source_type,
-                    "document_url": chunk.document_url,
-                    "user_upload_time": chunk.user_upload_time.isoformat() if chunk.user_upload_time else None,
-                    "metadata": chunk.metadata
-                }
+                "_source": source
             }
             actions.append(action)
         

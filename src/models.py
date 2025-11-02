@@ -1,11 +1,9 @@
-"""Pydantic models for data validation."""
 from typing import Optional, Dict, Any, Literal
 from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 
 class DocumentMetadata(BaseModel):
-    """Metadata about the document."""
     filename: Optional[str] = None
     page_count: Optional[int] = None
     created_at: Optional[str] = None
@@ -15,7 +13,6 @@ class DocumentMetadata(BaseModel):
 
 
 class KafkaMessage(BaseModel):
-    """Schema for incoming Kafka messages."""
     doc_id: str = Field(..., description="Unique document identifier")
     user_id: Optional[str] = Field(None, description="User ID, null for system topics")
     topic_type: Literal["system", "user"] = Field(..., description="Type of topic")
@@ -27,7 +24,6 @@ class KafkaMessage(BaseModel):
     @field_validator("user_id")
     @classmethod
     def validate_user_id(cls, v: Optional[str], info) -> Optional[str]:
-        """Validate user_id based on topic_type."""
         topic_type = info.data.get("topic_type")
         if topic_type == "user" and not v:
             raise ValueError("user_id is required for user topic_type")
@@ -38,14 +34,12 @@ class KafkaMessage(BaseModel):
     @field_validator("topic_name")
     @classmethod
     def validate_topic_name(cls, v: str) -> str:
-        """Validate topic name."""
         if not v or not v.strip():
             raise ValueError("topic_name cannot be empty")
         return v.strip()
 
 
 class TextChunk(BaseModel):
-    """Represents a text chunk with metadata."""
     chunk_id: int = Field(..., description="Chunk sequence number")
     text: str = Field(..., description="Chunk text content")
     doc_id: str = Field(..., description="Parent document ID")
@@ -57,5 +51,4 @@ class TextChunk(BaseModel):
 
 
 class ChunkWithEmbedding(TextChunk):
-    """Text chunk with embedding vector."""
     embedding: list[float] = Field(..., description="Embedding vector")

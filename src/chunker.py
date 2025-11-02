@@ -1,4 +1,3 @@
-"""Text chunking module with overlap support."""
 import re
 from typing import List
 from src.config import settings
@@ -6,23 +5,11 @@ from src.logger import logger
 
 
 class TextChunker:
-    """
-    Splits text into chunks with word-based overlap.
-    Optimized for Russian and English text.
-    """
-    
     def __init__(
         self,
         chunk_size_words: int = None,
         overlap_words: int = None
     ):
-        """
-        Initialize text chunker.
-        
-        Args:
-            chunk_size_words: Target chunk size in words
-            overlap_words: Number of words to overlap between chunks
-        """
         self.chunk_size_words = chunk_size_words or settings.chunk_size_words
         self.overlap_words = overlap_words or settings.chunk_overlap_words
         
@@ -31,30 +18,12 @@ class TextChunker:
         self.sentence_pattern = re.compile(r'[.!?]+[\s\n]+')
         
     def split_into_words(self, text: str) -> List[str]:
-        """
-        Split text into words, preserving spaces for reconstruction.
-        
-        Args:
-            text: Input text
-            
-        Returns:
-            List of words
-        """
         # Split on whitespace but keep the text structure
         words = re.findall(r'\S+|\s+', text)
         # Filter out pure whitespace entries but keep words with punctuation
         return [w for w in words if w.strip()]
     
     def chunk_text(self, text: str) -> List[str]:
-        """
-        Split text into overlapping chunks.
-        
-        Args:
-            text: Input text to chunk
-            
-        Returns:
-            List of text chunks
-        """
         if not text or not text.strip():
             logger.warning("Empty text provided for chunking")
             return []
@@ -116,9 +85,6 @@ class TextChunker:
         return chunks
     
     def _split_into_sentences(self, text: str) -> List[str]:
-        """
-        Split text into sentences, keeping terminating punctuation.
-        """
         sentences = []
         current = ""
         for part in re.split(r'([.!?]+[\s\n]+)', text):
@@ -130,6 +96,4 @@ class TextChunker:
             sentences.append(current.strip())
         return sentences
 
-
-# Global chunker instance
 chunker = TextChunker()

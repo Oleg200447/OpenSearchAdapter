@@ -1,4 +1,3 @@
-"""Client for embedding service (vLLM OpenAI compatible API)."""
 import asyncio
 from typing import List
 import httpx
@@ -7,13 +6,7 @@ from src.logger import logger
 
 
 class EmbeddingClient:
-    """
-    Async client for embedding generation service.
-    Uses vLLM OpenAI-compatible API.
-    """
-    
     def __init__(self):
-        """Initialize embedding client."""
         self.base_url = settings.embedding_service_url
         self.model = settings.embedding_model
         self.batch_size = settings.embedding_batch_size

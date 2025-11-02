@@ -1,4 +1,3 @@
-"""Logging configuration with structured JSON output."""
 import logging
 import sys
 from pythonjsonlogger import jsonlogger
@@ -6,15 +5,6 @@ from src.config import settings
 
 
 def setup_logger(name: str) -> logging.Logger:
-    """
-    Setup logger with JSON formatting.
-    
-    Args:
-        name: Logger name
-        
-    Returns:
-        Configured logger instance
-    """
     logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, settings.log_level.upper()))
     
@@ -32,6 +22,4 @@ def setup_logger(name: str) -> logging.Logger:
     
     return logger
 
-
-# Global logger instance
 logger = setup_logger("opensearch_adapter")

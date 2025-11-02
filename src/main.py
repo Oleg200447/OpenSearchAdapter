@@ -1,4 +1,3 @@
-"""Main FastAPI application and entry point."""
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -14,57 +13,43 @@ async def lifespan(app: FastAPI):
     """
     Lifespan context manager for startup and shutdown events.
     """
-    # Startup
     logger.info("Starting OpenSearch Adapter service...")
-    
-    # Connect to OpenSearch
     logger.info("Connecting to OpenSearch...")
     opensearch_connected = await asyncio.to_thread(opensearch_client.connect)
     if not opensearch_connected:
         logger.error("Failed to connect to OpenSearch. Exiting...")
         raise Exception("OpenSearch connection failed")
-    
-    # Test embedding service connection
+
     logger.info("Testing embedding service connection...")
     embedding_connected = await embedding_client.test_connection()
     if not embedding_connected:
         logger.error("Failed to connect to embedding service. Exiting...")
         raise Exception("Embedding service connection failed")
-    
-    # Create system indices
+
     logger.info("Creating system topic indices...")
     system_indices_created = await asyncio.to_thread(opensearch_client.create_system_indices)
     if not system_indices_created:
         logger.warning("Some system indices failed to create, but continuing...")
-    
-    # Start Kafka consumer in background
+
     logger.info("Starting Kafka consumer...")
     consumer_task = asyncio.create_task(document_processor.start())
     
     logger.info("OpenSearch Adapter service started successfully!")
-    
+
     yield
-    
-    # Shutdown
+
     logger.info("Shutting down OpenSearch Adapter service...")
-    
-    # Stop Kafka consumer
     await document_processor.stop()
-    
-    # Wait for consumer task to complete
     try:
         await asyncio.wait_for(consumer_task, timeout=10.0)
     except asyncio.TimeoutError:
         logger.warning("Kafka consumer did not stop gracefully")
         consumer_task.cancel()
-    
-    # Close OpenSearch connection
     await asyncio.to_thread(opensearch_client.close)
     
     logger.info("OpenSearch Adapter service stopped")
 
 
-# Create FastAPI app
 app = FastAPI(
     title="OpenSearch Adapter",
     description="Service for processing documents from Kafka and indexing into OpenSearch",
