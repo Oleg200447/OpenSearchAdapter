@@ -82,9 +82,11 @@ class DocumentConsumer:
             logger.error(f"Message validation failed: {e.errors()}")
             return
         
+        topic_type = kafka_msg.get_topic_type()
+        
         logger.info(f"Processing document {kafka_msg.doc_id}", extra={
             "doc_id": kafka_msg.doc_id,
-            "topic_type": kafka_msg.topic_type,
+            "topic_type": topic_type,
             "topic_name": kafka_msg.topic_name,
             "source_type": kafka_msg.source_type
         })
@@ -92,7 +94,7 @@ class DocumentConsumer:
         try:
             # Get expected index name
             index_name = opensearch_client._get_index_name(
-                kafka_msg.topic_type,
+                topic_type,
                 kafka_msg.topic_name,
                 kafka_msg.user_id
             )
@@ -110,7 +112,7 @@ class DocumentConsumer:
                     extra={
                         "doc_id": kafka_msg.doc_id,
                         "index_name": index_name,
-                        "topic_type": kafka_msg.topic_type,
+                        "topic_type": topic_type,
                         "topic_name": kafka_msg.topic_name
                     }
                 )
@@ -128,14 +130,10 @@ class DocumentConsumer:
             # Step 2: Create TextChunk objects
             chunks = []
             upload_time = None
-            if kafka_msg.metadata.created_at:
-                try:
-                    upload_time = datetime.fromisoformat(kafka_msg.metadata.created_at.replace('Z', '+00:00'))
-                except Exception as e:
-                    logger.warning(f"Failed to parse upload time: {e}")
-            
-            # Get document URL from metadata if available
-            document_url = kafka_msg.metadata.filename if kafka_msg.metadata.filename else None
+            try:
+                upload_time = datetime.fromisoformat(kafka_msg.upload_time.replace('Z', '+00:00'))
+            except Exception as e:
+                logger.warning(f"Failed to parse upload time: {e}")
             
             for idx, chunk_text in enumerate(text_chunks):
                 chunk = TextChunk(
@@ -144,9 +142,9 @@ class DocumentConsumer:
                     doc_id=kafka_msg.doc_id,
                     user_id=kafka_msg.user_id,
                     source_type=kafka_msg.source_type,
-                    document_url=document_url,
+                    document_url=kafka_msg.document_url,
                     user_upload_time=upload_time,
-                    metadata=kafka_msg.metadata.model_dump()
+                    metadata={}
                 )
                 chunks.append(chunk)
             
