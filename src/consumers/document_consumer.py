@@ -13,13 +13,14 @@ from src.embedding_client import embedding_client
 from src.opensearch_client import opensearch_client
 
 
-class DocumentProcessor:
+class DocumentConsumer:
     """
     Processes documents from Kafka and indexes them into OpenSearch.
+    Indexes must already exist - this consumer does not create them.
     """
     
     def __init__(self):
-        """Initialize document processor."""
+        """Initialize document consumer."""
         self.consumer: Optional[AIOKafkaConsumer] = None
         self.running = False
         
@@ -37,7 +38,7 @@ class DocumentProcessor:
             )
             
             await self.consumer.start()
-            logger.info(f"Kafka consumer started. Topic: {settings.kafka_topic}, "
+            logger.info(f"Document consumer started. Topic: {settings.kafka_topic}, "
                        f"Group: {settings.kafka_group_id}")
             
             self.running = True
@@ -56,7 +57,7 @@ class DocumentProcessor:
                     })
                     
         except Exception as e:
-            logger.error(f"Error in Kafka consumer: {e}")
+            logger.error(f"Error in document consumer: {e}")
         finally:
             await self.stop()
     
@@ -65,7 +66,7 @@ class DocumentProcessor:
         self.running = False
         if self.consumer:
             await self.consumer.stop()
-            logger.info("Kafka consumer stopped")
+            logger.info("Document consumer stopped")
     
     async def process_message(self, message_data: dict):
         """
@@ -89,6 +90,32 @@ class DocumentProcessor:
         })
         
         try:
+            # Get expected index name
+            index_name = opensearch_client._get_index_name(
+                kafka_msg.topic_type,
+                kafka_msg.topic_name,
+                kafka_msg.user_id
+            )
+            
+            # Check if index exists
+            index_exists = await asyncio.to_thread(
+                opensearch_client.client.indices.exists,
+                index=index_name
+            )
+            
+            if not index_exists:
+                logger.error(
+                    f"Index {index_name} does not exist. Cannot process document {kafka_msg.doc_id}. "
+                    f"Index must be created first via index creation topic.",
+                    extra={
+                        "doc_id": kafka_msg.doc_id,
+                        "index_name": index_name,
+                        "topic_type": kafka_msg.topic_type,
+                        "topic_name": kafka_msg.topic_name
+                    }
+                )
+                return
+            
             # Step 1: Chunk the text
             text_chunks = chunker.chunk_text(kafka_msg.text)
             
@@ -140,15 +167,7 @@ class DocumentProcessor:
                 )
                 chunks_with_embeddings.append(chunk_with_emb)
             
-            # Step 5: Ensure index exists
-            index_name = await asyncio.to_thread(
-                opensearch_client.ensure_index_exists,
-                topic_type=kafka_msg.topic_type,
-                topic_name=kafka_msg.topic_name,
-                user_id=kafka_msg.user_id
-            )
-            
-            # Step 6: Index chunks into OpenSearch
+            # Step 5: Index chunks into OpenSearch
             success = await asyncio.to_thread(
                 opensearch_client.index_chunks,
                 chunks=chunks_with_embeddings,
@@ -171,5 +190,5 @@ class DocumentProcessor:
             })
 
 
-# Global processor instance
-document_processor = DocumentProcessor()
+# Global consumer instance
+document_consumer = DocumentConsumer()

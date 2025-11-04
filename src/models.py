@@ -52,3 +52,30 @@ class TextChunk(BaseModel):
 
 class ChunkWithEmbedding(TextChunk):
     embedding: list[float] = Field(..., description="Embedding vector")
+
+
+class DeleteDocumentMessage(BaseModel):
+    """Message for deleting documents by doc_id from an index."""
+    doc_id: str = Field(..., description="Document ID to delete")
+    index_name: str = Field(..., description="Name of the index to delete from")
+    request_time: str = Field(..., description="Request timestamp")
+    
+    @field_validator("doc_id", "index_name")
+    @classmethod
+    def validate_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v.strip()
+
+
+class CreateIndexMessage(BaseModel):
+    """Message for creating a new user index."""
+    topic_name: str = Field(..., description="Name of the topic/index to create")
+    request_time: str = Field(..., description="Request timestamp")
+    
+    @field_validator("topic_name")
+    @classmethod
+    def validate_topic_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("topic_name cannot be empty")
+        return v.strip()

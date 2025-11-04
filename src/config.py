@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     kafka_bootstrap_servers: str = "kafka:9092"
     kafka_topic: str = "documents"
     kafka_group_id: str = "opensearch_adapter_group"
+    kafka_delete_topic: str = "document_deletions"
+    kafka_delete_group_id: str = "deletion_consumer_group"
+    kafka_index_creation_topic: str = "index_creations"
+    kafka_index_creation_group_id: str = "index_creation_consumer_group"
     opensearch_host: str = "opensearch"
     opensearch_port: int = 9200
     opensearch_user: str = "admin"

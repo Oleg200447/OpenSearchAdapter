@@ -251,6 +251,51 @@ class OpenSearchClient:
             logger.error(f"Error during bulk indexing: {e}")
             return False
     
+    def delete_documents_by_doc_id(self, index_name: str, doc_id: str) -> bool:
+        """
+        Delete all documents with the specified doc_id from an index.
+        
+        Args:
+            index_name: Name of the index to delete from
+            doc_id: Document ID to delete
+            
+        Returns:
+            True if deletion successful, False otherwise
+        """
+        try:
+            # Check if index exists
+            if not self.client.indices.exists(index=index_name):
+                logger.warning(f"Index {index_name} does not exist, cannot delete doc_id {doc_id}")
+                return False
+            
+            # Delete all documents with the specified doc_id
+            query = {
+                "query": {
+                    "term": {
+                        "doc_id": doc_id
+                    }
+                }
+            }
+            
+            response = self.client.delete_by_query(
+                index=index_name,
+                body=query,
+                refresh=True
+            )
+            
+            deleted_count = response.get('deleted', 0)
+            
+            if deleted_count > 0:
+                logger.info(f"Deleted {deleted_count} documents with doc_id {doc_id} from index {index_name}")
+                return True
+            else:
+                logger.warning(f"No documents found with doc_id {doc_id} in index {index_name}")
+                return True  # Not an error, just no documents to delete
+                
+        except Exception as e:
+            logger.error(f"Error deleting documents with doc_id {doc_id} from {index_name}: {e}")
+            return False
+    
     def create_system_indices(self) -> bool:
         """
         Create all system topic indices.

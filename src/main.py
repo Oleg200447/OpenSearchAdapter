@@ -5,7 +5,7 @@ from src.config import settings
 from src.logger import logger
 from src.embedding_client import embedding_client
 from src.opensearch_client import opensearch_client
-from src.kafka_consumer import document_processor
+from src.consumers import document_consumer, deletion_consumer, index_creation_consumer
 
 
 @asynccontextmanager
@@ -31,20 +31,35 @@ async def lifespan(app: FastAPI):
     if not system_indices_created:
         logger.warning("Some system indices failed to create, but continuing...")
 
-    logger.info("Starting Kafka consumer...")
-    consumer_task = asyncio.create_task(document_processor.start())
+    logger.info("Starting Kafka consumers...")
+    document_task = asyncio.create_task(document_consumer.start())
+    deletion_task = asyncio.create_task(deletion_consumer.start())
+    index_creation_task = asyncio.create_task(index_creation_consumer.start())
     
     logger.info("OpenSearch Adapter service started successfully!")
+    logger.info("All consumers running: document, deletion, index_creation")
 
     yield
 
     logger.info("Shutting down OpenSearch Adapter service...")
-    await document_processor.stop()
+    
+    # Stop all consumers
+    await document_consumer.stop()
+    await deletion_consumer.stop()
+    await index_creation_consumer.stop()
+    
+    # Wait for all tasks to complete
     try:
-        await asyncio.wait_for(consumer_task, timeout=10.0)
+        await asyncio.wait_for(
+            asyncio.gather(document_task, deletion_task, index_creation_task, return_exceptions=True),
+            timeout=10.0
+        )
     except asyncio.TimeoutError:
-        logger.warning("Kafka consumer did not stop gracefully")
-        consumer_task.cancel()
+        logger.warning("Some consumers did not stop gracefully")
+        document_task.cancel()
+        deletion_task.cancel()
+        index_creation_task.cancel()
+    
     await asyncio.to_thread(opensearch_client.close)
     
     logger.info("OpenSearch Adapter service stopped")
