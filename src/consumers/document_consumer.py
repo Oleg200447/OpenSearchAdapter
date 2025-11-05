@@ -82,23 +82,16 @@ class DocumentConsumer:
             logger.error(f"Message validation failed: {e.errors()}")
             return
         
-        topic_type = kafka_msg.get_topic_type()
-        
         logger.info(f"Processing document {kafka_msg.doc_id}", extra={
             "doc_id": kafka_msg.doc_id,
-            "topic_type": topic_type,
             "topic_name": kafka_msg.topic_name,
             "source_type": kafka_msg.source_type
         })
         
         try:
             # Get expected index name
-            index_name = opensearch_client._get_index_name(
-                topic_type,
-                kafka_msg.topic_name,
-                kafka_msg.user_id
-            )
-            
+            index_name = kafka_msg.topic_name
+         
             # Check if index exists
             index_exists = await asyncio.to_thread(
                 opensearch_client.client.indices.exists,
@@ -112,7 +105,6 @@ class DocumentConsumer:
                     extra={
                         "doc_id": kafka_msg.doc_id,
                         "index_name": index_name,
-                        "topic_type": topic_type,
                         "topic_name": kafka_msg.topic_name
                     }
                 )

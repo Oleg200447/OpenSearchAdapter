@@ -52,22 +52,6 @@ class OpenSearchClient:
             self.client.close()
             logger.info("OpenSearch connection closed")
     
-    def _get_index_name(self, topic_type: str, topic_name: str, user_id: Optional[str] = None) -> str:
-        """
-        Get index name based on topic type.
-        
-        Args:
-            topic_type: "system" or "user"
-            topic_name: Name of the topic
-            user_id: User ID for user topics
-            
-        Returns:
-            Index name
-        """
-        if topic_type == "system":
-            return f"system_{topic_name}"
-        else:
-            return f"user_{user_id}_topic"
     
     def create_index(
         self,
