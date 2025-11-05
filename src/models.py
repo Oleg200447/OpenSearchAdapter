@@ -8,7 +8,7 @@ class KafkaMessage(BaseModel):
     user_id: Optional[str] = Field(None, description="User ID, null for system topics")
     topic_name: str = Field(..., description="Topic name starting with 'user' or 'system'")
     source_type: Literal["pdf", "pptx", "docx"] = Field(..., description="Document source type")
-    document_url: str = Field(..., description="URL to document in MinIO")
+    #document_url: str = Field(..., description="URL to document in MinIO")
     upload_time: str = Field(..., description="Upload timestamp from upstream service")
     text: str = Field(..., min_length=1, description="Full document text")
     
@@ -43,7 +43,7 @@ class TextChunk(BaseModel):
     doc_id: str = Field(..., description="Parent document ID")
     user_id: Optional[str] = Field(None, description="User ID if applicable")
     source_type: str = Field(..., description="Document source type")
-    document_url: Optional[str] = Field(None, description="URL or path to original document")
+    #document_url: Optional[str] = Field(None, description="URL or path to original document")
     user_upload_time: Optional[datetime] = Field(None, description="Upload timestamp")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 

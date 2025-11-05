@@ -134,7 +134,7 @@ class DocumentConsumer:
                     doc_id=kafka_msg.doc_id,
                     user_id=kafka_msg.user_id,
                     source_type=kafka_msg.source_type,
-                    document_url=kafka_msg.document_url,
+                    #document_url=kafka_msg.document_url,
                     user_upload_time=upload_time,
                     metadata={}
                 )

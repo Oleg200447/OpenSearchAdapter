@@ -11,7 +11,7 @@ class EmbeddingClient:
         self.model = settings.embedding_model
         self.batch_size = settings.embedding_batch_size
         self.max_retries = 3
-        self.retry_delay = 2  # seconds
+        self.retry_delay = 2  
         
     async def get_embeddings(
         self,
@@ -80,8 +80,7 @@ class EmbeddingClient:
                     
                     data = response.json()
                     
-                    # Extract embeddings from response
-                    # OpenAI format: {"data": [{"embedding": [...], "index": 0}, ...]}
+
                     embeddings = [
                         item["embedding"]
                         for item in sorted(data["data"], key=lambda x: x["index"])
@@ -129,5 +128,4 @@ class EmbeddingClient:
             return False
 
 
-# Global embedding client instance
 embedding_client = EmbeddingClient()

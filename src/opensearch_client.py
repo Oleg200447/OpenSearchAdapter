@@ -106,9 +106,9 @@ class OpenSearchClient:
             "source_type": {
                 "type": "keyword"
             },
-            "document_url": {
-                "type": "keyword"
-            },
+            #"document_url": {
+            #    "type": "keyword"
+            #},
             "upload_time":{
                 "type":"date"
             },
@@ -143,30 +143,6 @@ class OpenSearchClient:
             logger.error(f"Failed to create index {index_name}: {e}")
             return False
     
-    def ensure_index_exists(
-        self,
-        topic_type: str,
-        topic_name: str,
-        user_id: Optional[str] = None
-    ) -> str:
-        """
-        Ensure index exists, create if it doesn't.
-        
-        Args:
-            topic_type: "system" or "user"
-            topic_name: Name of the topic
-            user_id: User ID for user topics
-            
-        Returns:
-            Index name
-        """
-        index_name = self._get_index_name(topic_type, topic_name, user_id)
-        
-        # Create index if it doesn't exist
-        self.create_index(index_name)
-        
-        return index_name
-    
     def index_chunks(
         self,
         chunks: List[ChunkWithEmbedding],
@@ -186,7 +162,6 @@ class OpenSearchClient:
             logger.warning("No chunks to index")
             return True
         
-        # Prepare bulk actions
         is_system = index_name.startswith("system_")
         actions = []
         for chunk in chunks:
@@ -197,7 +172,7 @@ class OpenSearchClient:
                 "doc_id": chunk.doc_id,
                 "chunk_id": chunk.chunk_id,
                 "source_type": chunk.source_type,
-                "document_url": chunk.document_url,
+                #"document_url": chunk.document_url,
                 "metadata": chunk.metadata
             }
             
