@@ -68,6 +68,6 @@ test_embedder.py
 test_kafka_producer.py
 test_large_system_topics.py
 test_consumers.py
-
-CONSUMERS_README.md
-IMPLEMENTATION_SUMMARY.md
+add_100_texts.py
+delete_all_topics_script.py
+delete_100_texts.py

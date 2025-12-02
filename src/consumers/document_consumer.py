@@ -136,7 +136,7 @@ class DocumentConsumer:
                     source_type=kafka_msg.source_type,
                     #document_url=kafka_msg.document_url,
                     user_upload_time=upload_time,
-                    metadata={}
+                    #metadata={}
                 )
                 chunks.append(chunk)
             

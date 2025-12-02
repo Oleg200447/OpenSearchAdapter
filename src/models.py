@@ -45,7 +45,7 @@ class TextChunk(BaseModel):
     source_type: str = Field(..., description="Document source type")
     #document_url: Optional[str] = Field(None, description="URL or path to original document")
     user_upload_time: Optional[datetime] = Field(None, description="Upload timestamp")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    #metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class ChunkWithEmbedding(TextChunk):

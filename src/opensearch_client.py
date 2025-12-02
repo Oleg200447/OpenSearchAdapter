@@ -106,15 +106,8 @@ class OpenSearchClient:
             "source_type": {
                 "type": "keyword"
             },
-            #"document_url": {
-            #    "type": "keyword"
-            #},
-            "upload_time":{
+            "user_upload_time":{
                 "type":"date"
-            },
-            "metadata": {
-                "type": "object",
-                "enabled": True
             }
         }
         
@@ -172,16 +165,12 @@ class OpenSearchClient:
                 "doc_id": chunk.doc_id,
                 "chunk_id": chunk.chunk_id,
                 "source_type": chunk.source_type,
-                #"document_url": chunk.document_url,
-                "metadata": chunk.metadata
+                "user_upload_time": chunk.user_upload_time.isoformat()
             }
             
-            if is_system:
-                source["upload_time"] = chunk.user_upload_time.isoformat() if chunk.user_upload_time else None
-            else:
+            if not is_system:
                 source["user_id"] = chunk.user_id
-                source["user_upload_time"] = chunk.user_upload_time.isoformat() if chunk.user_upload_time else None
-            
+
             action = {
                 "_index": index_name,
                 "_id": f"{chunk.doc_id}_{chunk.chunk_id}",
