@@ -4,7 +4,7 @@ from datetime import datetime
 from opensearchpy import OpenSearch, helpers
 from src.config import settings
 from src.logger import logger
-from src.models import ChunkWithEmbedding
+from src.models import DocumentWithEmbedding
 
 
 class OpenSearchClient:
@@ -83,7 +83,8 @@ class OpenSearchClient:
         properties = {
             "text": {
                 "type": "text",
-                "analyzer": "standard"
+                "analyzer": "standard",
+                "search_analyzer": "synonym_analyzer"
             },
             "embedding": {
                 "type": "knn_vector",
@@ -100,8 +101,8 @@ class OpenSearchClient:
             "doc_id": {
                 "type": "keyword"
             },
-            "chunk_id": {
-                "type": "integer"
+            "text_hash": {
+                "type": "keyword"
             },
             "source_type": {
                 "type": "keyword"
@@ -121,6 +122,24 @@ class OpenSearchClient:
                 "index": {
                     "knn": True,
                     "knn.algo_param.ef_search": 100
+                },
+                "analysis": {
+                    "analyzer": {
+                        "synonym_analyzer": {
+                            "tokenizer": "standard",
+                            "filter": [
+                                "lowercase",
+                                "my_synonym_filter"
+                            ]
+                        }
+                    },
+                    "filter": {
+                        "my_synonym_filter": {
+                            "type": "synonym_graph",
+                            "synonyms_path": "synonyms.txt",
+                            "updateable": True
+                        }
+                    }
                 }
             },
             "mappings": {
@@ -136,44 +155,44 @@ class OpenSearchClient:
             logger.error(f"Failed to create index {index_name}: {e}")
             return False
     
-    def index_chunks(
+    def index_documents(
         self,
-        chunks: List[ChunkWithEmbedding],
+        documents: List[DocumentWithEmbedding],
         index_name: str
     ) -> bool:
         """
-        Index chunks into OpenSearch using bulk API.
+        Index documents into OpenSearch using bulk API.
         
         Args:
-            chunks: List of chunks with embeddings
+            documents: List of documents with embeddings
             index_name: Target index name
             
         Returns:
             True if indexing successful, False otherwise
         """
-        if not chunks:
-            logger.warning("No chunks to index")
+        if not documents:
+            logger.warning("No documents to index")
             return True
         
         is_system = index_name.startswith("system_")
         actions = []
-        for chunk in chunks:
+        for doc in documents:
             # Base source
             source = {
-                "text": chunk.text,
-                "embedding": chunk.embedding,
-                "doc_id": chunk.doc_id,
-                "chunk_id": chunk.chunk_id,
-                "source_type": chunk.source_type,
-                "user_upload_time": chunk.user_upload_time.isoformat()
+                "text": doc.text,
+                "embedding": doc.embedding,
+                "doc_id": doc.doc_id,
+                "text_hash": doc.text_hash,
+                "source_type": doc.source_type,
+                "user_upload_time": doc.user_upload_time.isoformat()
             }
             
             if not is_system:
-                source["user_id"] = chunk.user_id
+                source["user_id"] = doc.user_id
 
             action = {
                 "_index": index_name,
-                "_id": f"{chunk.doc_id}_{chunk.chunk_id}",
+                "_id": doc.doc_id,
                 "_source": source
             }
             actions.append(action)
@@ -188,11 +207,11 @@ class OpenSearchClient:
             )
             
             if failed:
-                logger.error(f"Failed to index {len(failed)} chunks in {index_name}")
+                logger.error(f"Failed to index {len(failed)} documents in {index_name}")
                 for item in failed:
                     logger.error(f"Failed item: {item}")
             
-            logger.info(f"Successfully indexed {success} chunks into {index_name}")
+            logger.info(f"Successfully indexed {success} documents into {index_name}")
             return success > 0
             
         except Exception as e:

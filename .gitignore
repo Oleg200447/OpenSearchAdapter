@@ -64,10 +64,6 @@ logs/
 # Docker
 *.pid
 
-test_embedder.py
-test_kafka_producer.py
-test_large_system_topics.py
-test_consumers.py
-add_100_texts.py
-delete_all_topics_script.py
-delete_100_texts.py
+tests_scripts/
+
+synonyms.txt

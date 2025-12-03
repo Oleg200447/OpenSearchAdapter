@@ -19,11 +19,9 @@ class Settings(BaseSettings):
     opensearch_use_ssl: bool = True
     opensearch_verify_certs: bool = False
     embedding_service_url: str = "http://embedding_server:8000"
-    embedding_model: str = "google/embeddinggemma-300m"
+    embedding_model: str = "BAAI/bge-m3"
     embedding_dimension: int = 256
     embedding_batch_size: int = 10
-    chunk_size_words: int = 1400
-    chunk_overlap_words: int = 150
     system_topics: str = "topic_1,topic_2,topic_3,topic_4,topic_5"
     log_level: str = "INFO"
     

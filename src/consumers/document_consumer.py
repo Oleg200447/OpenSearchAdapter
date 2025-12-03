@@ -1,16 +1,45 @@
 """Kafka consumer for processing document messages."""
 import json
 import asyncio
+import hashlib
+import re
 from typing import Optional
 from datetime import datetime
 from aiokafka import AIOKafkaConsumer
 from pydantic import ValidationError
 from src.config import settings
 from src.logger import logger
-from src.models import KafkaMessage, TextChunk, ChunkWithEmbedding
-from src.chunker import chunker
+from src.models import KafkaMessage, Document, DocumentWithEmbedding
 from src.embedding_client import embedding_client
 from src.opensearch_client import opensearch_client
+
+
+def get_first_n_words(text: str, n: int = 5000) -> str:
+    """
+    Extract first N words from text.
+    
+    Args:
+        text: Input text
+        n: Number of words to extract
+        
+    Returns:
+        String containing first N words
+    """
+    words = re.findall(r'\S+', text)
+    return ' '.join(words[:n])
+
+
+def calculate_text_hash(text: str) -> str:
+    """
+    Calculate SHA256 hash of text.
+    
+    Args:
+        text: Input text
+        
+    Returns:
+        Hexadecimal hash string
+    """
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
 class DocumentConsumer:
@@ -110,64 +139,54 @@ class DocumentConsumer:
                 )
                 return
             
-            # Step 1: Chunk the text
-            text_chunks = chunker.chunk_text(kafka_msg.text)
+            # Step 1: Extract first 5000 words for embedding
+            text_for_embedding = get_first_n_words(kafka_msg.text, 5000)
             
-            if not text_chunks:
-                logger.warning(f"No chunks created for document {kafka_msg.doc_id}")
+            logger.info(f"Extracted {len(text_for_embedding.split())} words for embedding from document {kafka_msg.doc_id}")
+            
+            # Step 2: Calculate hash of full text
+            text_hash = calculate_text_hash(kafka_msg.text)
+            
+            logger.info(f"Calculated text hash for document {kafka_msg.doc_id}: {text_hash[:16]}...")
+            
+            # Step 3: Get embedding for first 5000 words
+            embeddings = await embedding_client.get_embeddings([text_for_embedding])
+            
+            if not embeddings or len(embeddings) != 1:
+                logger.error(f"Failed to get embedding for document {kafka_msg.doc_id}")
                 return
             
-            logger.info(f"Created {len(text_chunks)} chunks for document {kafka_msg.doc_id}")
-            
-            # Step 2: Create TextChunk objects
-            chunks = []
+            # Step 4: Parse upload time
             upload_time = None
             try:
                 upload_time = datetime.fromisoformat(kafka_msg.upload_time.replace('Z', '+00:00'))
             except Exception as e:
                 logger.warning(f"Failed to parse upload time: {e}")
             
-            for idx, chunk_text in enumerate(text_chunks):
-                chunk = TextChunk(
-                    chunk_id=idx,
-                    text=chunk_text,
-                    doc_id=kafka_msg.doc_id,
-                    user_id=kafka_msg.user_id,
-                    source_type=kafka_msg.source_type,
-                    #document_url=kafka_msg.document_url,
-                    user_upload_time=upload_time,
-                    #metadata={}
-                )
-                chunks.append(chunk)
+            # Step 5: Create document with full text + embedding + hash
+            document = DocumentWithEmbedding(
+                text=kafka_msg.text,  # Full text
+                text_hash=text_hash,
+                embedding=embeddings[0],
+                doc_id=kafka_msg.doc_id,
+                user_id=kafka_msg.user_id,
+                source_type=kafka_msg.source_type,
+                user_upload_time=upload_time
+            )
             
-            # Step 3: Get embeddings for all chunks
-            chunk_texts = [chunk.text for chunk in chunks]
-            embeddings = await embedding_client.get_embeddings(chunk_texts)
-            
-            if len(embeddings) != len(chunks):
-                logger.error(f"Embedding count mismatch: {len(embeddings)} vs {len(chunks)}")
-                return
-            
-            # Step 4: Create ChunkWithEmbedding objects
-            chunks_with_embeddings = []
-            for chunk, embedding in zip(chunks, embeddings):
-                chunk_with_emb = ChunkWithEmbedding(
-                    **chunk.model_dump(),
-                    embedding=embedding
-                )
-                chunks_with_embeddings.append(chunk_with_emb)
-            
-            # Step 5: Index chunks into OpenSearch
+            # Step 6: Index document into OpenSearch
             success = await asyncio.to_thread(
-                opensearch_client.index_chunks,
-                chunks=chunks_with_embeddings,
+                opensearch_client.index_documents,
+                documents=[document],
                 index_name=index_name
             )
             
             if success:
                 logger.info(f"Successfully processed document {kafka_msg.doc_id}", extra={
                     "doc_id": kafka_msg.doc_id,
-                    "chunks_count": len(chunks_with_embeddings),
+                    "text_length": len(kafka_msg.text),
+                    "embedding_words": len(text_for_embedding.split()),
+                    "text_hash": text_hash,
                     "index_name": index_name
                 })
             else:

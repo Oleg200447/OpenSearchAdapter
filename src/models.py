@@ -37,10 +37,10 @@ class KafkaMessage(BaseModel):
         return "user" if self.topic_name.startswith("user") else "system"
 
 
-class TextChunk(BaseModel):
-    chunk_id: int = Field(..., description="Chunk sequence number")
-    text: str = Field(..., description="Chunk text content")
-    doc_id: str = Field(..., description="Parent document ID")
+class Document(BaseModel):
+    text: str = Field(..., description="Full document text content")
+    text_hash: str = Field(..., description="SHA256 hash of the text")
+    doc_id: str = Field(..., description="Document ID")
     user_id: Optional[str] = Field(None, description="User ID if applicable")
     source_type: str = Field(..., description="Document source type")
     #document_url: Optional[str] = Field(None, description="URL or path to original document")
@@ -48,7 +48,7 @@ class TextChunk(BaseModel):
     #metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
-class ChunkWithEmbedding(TextChunk):
+class DocumentWithEmbedding(Document):
     embedding: list[float] = Field(..., description="Embedding vector")
 
 
