@@ -5,6 +5,11 @@ from src.config import settings
 from src.logger import logger
 
 
+class ContextLengthError(Exception):
+    """Exception raised when input exceeds the model's context length."""
+    pass
+
+
 class EmbeddingClient:
     def __init__(self):
         self.base_url = settings.embedding_service_url
@@ -89,8 +94,15 @@ class EmbeddingClient:
                     return embeddings
                     
             except httpx.HTTPStatusError as e:
+                error_text = e.response.text
                 logger.error(f"HTTP error getting embeddings (attempt {attempt + 1}): "
-                           f"{e.response.status_code} - {e.response.text}")
+                           f"{e.response.status_code} - {error_text}")
+                
+                # Check if this is a context length error
+                if e.response.status_code == 400 and "maximum context length" in error_text:
+                    raise ContextLengthError(f"Input exceeds context length: {error_text}")
+                
+                # For other errors, retry
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(self.retry_delay * (attempt + 1))
                 else:

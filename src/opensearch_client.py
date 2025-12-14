@@ -135,8 +135,8 @@ class OpenSearchClient:
                     },
                     "filter": {
                         "my_synonym_filter": {
-                            "type": "synonym_graph",
-                            "synonyms_path": "synonyms.txt",
+                            "type": "synonym",
+                            "synonyms_path": "syns/synonyms.txt",
                             "updateable": True
                         }
                     }

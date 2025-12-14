@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from src.config import settings
 from src.logger import logger
 from src.models import KafkaMessage, Document, DocumentWithEmbedding
-from src.embedding_client import embedding_client
+from src.embedding_client import embedding_client, ContextLengthError
 from src.opensearch_client import opensearch_client
 
 
@@ -52,6 +52,47 @@ class DocumentConsumer:
         """Initialize document consumer."""
         self.consumer: Optional[AIOKafkaConsumer] = None
         self.running = False
+    
+    async def get_embedding_with_adaptive_length(self, text: str, doc_id: str) -> Optional[list]:
+        """
+        Get embedding for text with adaptive word count reduction.
+        Starts with 4500 words and reduces by 500 on context length errors until 500 words.
+        
+        Args:
+            text: Full document text
+            doc_id: Document ID for logging
+            
+        Returns:
+            Embedding vector or None if all attempts fail
+        """
+        word_counts = [4500, 4000, 3500, 3000, 2500, 2000, 1500, 1000, 500]
+        
+        for word_count in word_counts:
+            try:
+                text_for_embedding = get_first_n_words(text, word_count)
+                actual_words = len(text_for_embedding.split())
+                
+                logger.info(f"Attempting to get embedding with {word_count} words (actual: {actual_words}) for document {doc_id}")
+                
+                embeddings = await embedding_client.get_embeddings([text_for_embedding])
+                
+                if embeddings and len(embeddings) == 1:
+                    logger.info(f"Successfully got embedding with {actual_words} words for document {doc_id}")
+                    return embeddings[0]
+                else:
+                    logger.warning(f"Empty embedding result for document {doc_id} with {actual_words} words")
+                    
+            except ContextLengthError as e:
+                logger.warning(f"Context length exceeded with {word_count} words for document {doc_id}, trying with fewer words")
+                if word_count == 500:
+                    logger.error(f"Failed to get embedding even with minimum 500 words for document {doc_id}: {e}")
+                    return None
+                continue
+            except Exception as e:
+                logger.error(f"Error getting embedding for document {doc_id} with {word_count} words: {e}")
+                return None
+        
+        return None
         
     async def start(self):
         """Start Kafka consumer and begin processing messages."""
@@ -139,20 +180,15 @@ class DocumentConsumer:
                 )
                 return
             
-            # Step 1: Extract first 5000 words for embedding
-            text_for_embedding = get_first_n_words(kafka_msg.text, 5000)
-            
-            logger.info(f"Extracted {len(text_for_embedding.split())} words for embedding from document {kafka_msg.doc_id}")
-            
-            # Step 2: Calculate hash of full text
+            # Step 1: Calculate hash of full text
             text_hash = calculate_text_hash(kafka_msg.text)
             
             logger.info(f"Calculated text hash for document {kafka_msg.doc_id}: {text_hash[:16]}...")
             
-            # Step 3: Get embedding for first 5000 words
-            embeddings = await embedding_client.get_embeddings([text_for_embedding])
+            # Step 2: Get embedding with adaptive word count (4500 -> 500 with -500 step)
+            embedding = await self.get_embedding_with_adaptive_length(kafka_msg.text, kafka_msg.doc_id)
             
-            if not embeddings or len(embeddings) != 1:
+            if not embedding:
                 logger.error(f"Failed to get embedding for document {kafka_msg.doc_id}")
                 return
             
@@ -167,7 +203,7 @@ class DocumentConsumer:
             document = DocumentWithEmbedding(
                 text=kafka_msg.text,  # Full text
                 text_hash=text_hash,
-                embedding=embeddings[0],
+                embedding=embedding,
                 doc_id=kafka_msg.doc_id,
                 user_id=kafka_msg.user_id,
                 source_type=kafka_msg.source_type,
@@ -185,7 +221,6 @@ class DocumentConsumer:
                 logger.info(f"Successfully processed document {kafka_msg.doc_id}", extra={
                     "doc_id": kafka_msg.doc_id,
                     "text_length": len(kafka_msg.text),
-                    "embedding_words": len(text_for_embedding.split()),
                     "text_hash": text_hash,
                     "index_name": index_name
                 })
