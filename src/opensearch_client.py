@@ -84,7 +84,6 @@ class OpenSearchClient:
             "text": {
                 "type": "text",
                 "analyzer": "standard",
-                "search_analyzer": "synonym_analyzer"
             },
             "embedding": {
                 "type": "knn_vector",
@@ -123,24 +122,6 @@ class OpenSearchClient:
                     "knn": True,
                     "knn.algo_param.ef_search": 100
                 },
-                "analysis": {
-                    "analyzer": {
-                        "synonym_analyzer": {
-                            "tokenizer": "standard",
-                            "filter": [
-                                "lowercase",
-                                "my_synonym_filter"
-                            ]
-                        }
-                    },
-                    "filter": {
-                        "my_synonym_filter": {
-                            "type": "synonym",
-                            "synonyms_path": "syns/synonyms.txt",
-                            "updateable": True
-                        }
-                    }
-                }
             },
             "mappings": {
                 "properties": properties
