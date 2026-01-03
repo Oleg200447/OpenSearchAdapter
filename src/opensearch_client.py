@@ -99,6 +99,9 @@ class OpenSearchClient:
             },
             "doc_id": {
                 "type": "keyword"
+            }, #doc_name TODO
+            "doc_name": {
+                "type": "keyword"
             },
             "text_hash": {
                 "type": "keyword"
@@ -163,10 +166,11 @@ class OpenSearchClient:
                 "text": doc.text,
                 "embedding": doc.embedding,
                 "doc_id": doc.doc_id,
+                "doc_name": doc.doc_name,
                 "text_hash": doc.text_hash,
                 "source_type": doc.source_type,
                 "user_upload_time": doc.user_upload_time.isoformat()
-            }
+            } #doc_name TODO
             
             if not is_system:
                 source["user_id"] = doc.user_id

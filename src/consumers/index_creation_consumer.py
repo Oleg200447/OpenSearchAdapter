@@ -80,8 +80,9 @@ class IndexCreationConsumer:
             return
         
         logger.info(f"Processing index creation request for topic {create_msg.topic_name}", extra={
+            "user_id": create_msg.user_id, 
             "topic_name": create_msg.topic_name,
-            "request_time": create_msg.request_time
+            "request_time": create_msg.upload_time
         })
         
         try:
@@ -95,7 +96,7 @@ class IndexCreationConsumer:
             if success:
                 logger.info(f"Successfully created index {create_msg.topic_name}", extra={
                     "index_name": create_msg.topic_name,
-                    "request_time": create_msg.request_time
+                    "request_time": create_msg.upload_time
                 })
             else:
                 logger.error(f"Failed to create index {create_msg.topic_name}")

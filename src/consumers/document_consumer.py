@@ -154,6 +154,7 @@ class DocumentConsumer:
         
         logger.info(f"Processing document {kafka_msg.doc_id}", extra={
             "doc_id": kafka_msg.doc_id,
+            "doc_name": kafka_msg.doc_name,
             "topic_name": kafka_msg.topic_name,
             "source_type": kafka_msg.source_type
         })
@@ -174,6 +175,7 @@ class DocumentConsumer:
                     f"Index must be created first via index creation topic.",
                     extra={
                         "doc_id": kafka_msg.doc_id,
+                        "doc_name": kafka_msg.doc_name,
                         "index_name": index_name,
                         "topic_name": kafka_msg.topic_name
                     }
@@ -205,6 +207,7 @@ class DocumentConsumer:
                 text_hash=text_hash,
                 embedding=embedding,
                 doc_id=kafka_msg.doc_id,
+                doc_name = kafka_msg.doc_name,
                 user_id=kafka_msg.user_id,
                 source_type=kafka_msg.source_type,
                 user_upload_time=upload_time
@@ -220,6 +223,7 @@ class DocumentConsumer:
             if success:
                 logger.info(f"Successfully processed document {kafka_msg.doc_id}", extra={
                     "doc_id": kafka_msg.doc_id,
+                    "doc_name": kafka_msg.doc_name,
                     "text_length": len(kafka_msg.text),
                     "text_hash": text_hash,
                     "index_name": index_name
@@ -232,6 +236,19 @@ class DocumentConsumer:
                 "doc_id": kafka_msg.doc_id,
                 "error": str(e)
             })
+
+
+
+    #     async for message in self.consumer:
+    # try:
+    #     await self.process_message(message.value)
+    #     await self.consumer.commit()
+    # except RetryableError:
+    #     logger.warning("Retryable error, not committing offset")
+    #     await send_to_retry_topic(message)
+    # except FatalError:
+    #     logger.error("Fatal error, committing offset")
+    #     await self.consumer.commit()
 
 
 # Global consumer instance

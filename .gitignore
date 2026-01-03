@@ -67,3 +67,6 @@ logs/
 tests_scripts/
 
 open_search_synonyms/
+
+docker_logs.json
+last_hour_logs.txt

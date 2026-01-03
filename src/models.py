@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class KafkaMessage(BaseModel):
     doc_id: str = Field(..., description="Unique document identifier")
+    doc_name: str = Field(..., description="Document name")
     user_id: Optional[str] = Field(None, description="User ID, null for system topics")
     topic_name: str = Field(..., description="Topic name starting with 'user' or 'system'")
     source_type: Literal["pdf", "pptx", "docx"] = Field(..., description="Document source type")
@@ -37,10 +38,11 @@ class KafkaMessage(BaseModel):
         return "user" if self.topic_name.startswith("user") else "system"
 
 
-class Document(BaseModel):
+class Document(BaseModel): #need doc_name TODO
     text: str = Field(..., description="Full document text content")
     text_hash: str = Field(..., description="SHA256 hash of the text")
     doc_id: str = Field(..., description="Document ID")
+    doc_name: str = Field(..., description="Document name")
     user_id: Optional[str] = Field(None, description="User ID if applicable")
     source_type: str = Field(..., description="Document source type")
     #document_url: Optional[str] = Field(None, description="URL or path to original document")
@@ -68,8 +70,9 @@ class DeleteDocumentMessage(BaseModel):
 
 class CreateIndexMessage(BaseModel):
     """Message for creating a new user index."""
+    user_id: str = Field(..., description="topic creator")
     topic_name: str = Field(..., description="Name of the topic/index to create")
-    request_time: str = Field(..., description="Request timestamp")
+    upload_time: str = Field(..., description="Request timestamp")
     
     @field_validator("topic_name")
     @classmethod
