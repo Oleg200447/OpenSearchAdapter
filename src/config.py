@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     kafka_delete_group_id: str = "deletion_consumer_group"
     kafka_index_creation_topic: str = "index_creations_topic"
     kafka_index_creation_group_id: str = "index_creation_consumer_group"
+    kafka_index_deletion_topic: str = "index_deletions_topic"
+    kafka_index_deletion_group_id: str = "index_deletion_consumer_group"
     opensearch_host: str = "opensearch"
     opensearch_port: int = 9200
     opensearch_user: str = "admin"

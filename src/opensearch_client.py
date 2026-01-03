@@ -140,6 +140,32 @@ class OpenSearchClient:
             logger.error(f"Failed to create index {index_name}: {e}")
             return False
     
+    def delete_index(self, index_name: str) -> bool:
+        """
+        Delete an OpenSearch index.
+        
+        Args:
+            index_name: Name of the index to delete
+            
+        Returns:
+            True if index deleted successfully or doesn't exist, False on error
+        """
+        try:
+            # Check if index exists
+            exists = self.client.indices.exists(index=index_name)
+            if not exists:
+                logger.warning(f"Index {index_name} does not exist, nothing to delete")
+                return True
+            
+            # Delete the index
+            self.client.indices.delete(index=index_name)
+            logger.info(f"Successfully deleted index: {index_name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to delete index {index_name}: {e}")
+            return False
+    
     def index_documents(
         self,
         documents: List[DocumentWithEmbedding],

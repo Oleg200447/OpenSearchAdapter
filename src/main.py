@@ -5,7 +5,7 @@ from src.config import settings
 from src.logger import logger
 from src.embedding_client import embedding_client
 from src.opensearch_client import opensearch_client
-from src.consumers import document_consumer, deletion_consumer, index_creation_consumer
+from src.consumers import document_consumer, deletion_consumer, index_creation_consumer, index_deletion_consumer
 
 
 @asynccontextmanager
@@ -35,9 +35,10 @@ async def lifespan(app: FastAPI):
     document_task = asyncio.create_task(document_consumer.start())
     deletion_task = asyncio.create_task(deletion_consumer.start())
     index_creation_task = asyncio.create_task(index_creation_consumer.start())
+    index_deletion_task = asyncio.create_task(index_deletion_consumer.start())
     
     logger.info("OpenSearch Adapter service started successfully!")
-    logger.info("All consumers running: document, deletion, index_creation")
+    logger.info("All consumers running: document, deletion, index_creation, index_deletion")
 
     yield
 
@@ -47,11 +48,12 @@ async def lifespan(app: FastAPI):
     await document_consumer.stop()
     await deletion_consumer.stop()
     await index_creation_consumer.stop()
+    await index_deletion_consumer.stop()
     
     # Wait for all tasks to complete
     try:
         await asyncio.wait_for(
-            asyncio.gather(document_task, deletion_task, index_creation_task, return_exceptions=True),
+            asyncio.gather(document_task, deletion_task, index_creation_task, index_deletion_task, return_exceptions=True),
             timeout=10.0
         )
     except asyncio.TimeoutError:
@@ -59,6 +61,7 @@ async def lifespan(app: FastAPI):
         document_task.cancel()
         deletion_task.cancel()
         index_creation_task.cancel()
+        index_deletion_task.cancel()
     
     await asyncio.to_thread(opensearch_client.close)
     

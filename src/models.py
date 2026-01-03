@@ -80,3 +80,17 @@ class CreateIndexMessage(BaseModel):
         if not v or not v.strip():
             raise ValueError("topic_name cannot be empty")
         return v.strip()
+
+
+class DeleteIndexMessage(BaseModel):
+    """Message for deleting an index."""
+    user_id: str = Field(..., description="User ID who owns the index")
+    topic_name: str = Field(..., description="Name of the topic/index to delete")
+    upload_time: str = Field(..., description="Request timestamp")
+    
+    @field_validator("topic_name")
+    @classmethod
+    def validate_topic_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("topic_name cannot be empty")
+        return v.strip()
