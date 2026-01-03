@@ -13,29 +13,29 @@ class KafkaMessage(BaseModel):
     upload_time: str = Field(..., description="Upload timestamp from upstream service")
     text: str = Field(..., min_length=1, description="Full document text")
     
-    @field_validator("topic_name")
-    @classmethod
-    def validate_topic_name(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("topic_name cannot be empty")
-        v = v.strip()
-        if not v.startswith("user") and not v.startswith("system"):
-            raise ValueError("topic_name must start with 'user' or 'system'")
-        return v
+    # @field_validator("topic_name")
+    # @classmethod
+    # def validate_topic_name(cls, v: str) -> str:
+    #     if not v or not v.strip():
+    #         raise ValueError("topic_name cannot be empty")
+    #     v = v.strip()
+    #     if not v.startswith("user") and not v.startswith("system"):
+    #         raise ValueError("topic_name must start with 'user' or 'system'")
+    #     return v
     
-    @field_validator("user_id")
-    @classmethod
-    def validate_user_id(cls, v: Optional[str], info) -> Optional[str]:
-        topic_name = info.data.get("topic_name", "")
-        if topic_name.startswith("user") and not v:
-            raise ValueError("user_id is required for user topics")
-        if topic_name.startswith("system") and v:
-            raise ValueError("user_id must be null for system topics")
-        return v
+    # @field_validator("user_id")
+    # @classmethod
+    # def validate_user_id(cls, v: Optional[str], info) -> Optional[str]:
+    #     topic_name = info.data.get("topic_name", "")
+    #     if topic_name.startswith("user") and not v:
+    #         raise ValueError("user_id is required for user topics")
+    #     if topic_name.startswith("system") and v:
+    #         raise ValueError("user_id must be null for system topics")
+    #     return v
     
-    def get_topic_type(self) -> Literal["user", "system"]:
-        """Infer topic type from topic_name prefix."""
-        return "user" if self.topic_name.startswith("user") else "system"
+    # def get_topic_type(self) -> Literal["user", "system"]:
+    #     """Infer topic type from topic_name prefix."""
+    #     return "user" if self.topic_name.startswith("user") else "system"
 
 
 class Document(BaseModel): #need doc_name TODO

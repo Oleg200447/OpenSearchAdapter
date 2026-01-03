@@ -115,9 +115,10 @@ class OpenSearchClient:
         }
         
         # Add user-specific fields for user indices
-        if not index_name.startswith("system_"):
-            properties["user_id"] = {"type": "keyword"}
-        
+        # if not index_name.startswith("system_"):
+        #     properties["user_id"] = {"type": "keyword"}
+        if not index_name in settings.system_topics_list :
+             properties["user_id"] = {"type": "keyword"}
         # Index configuration
         index_body = {
             "settings": {
@@ -158,7 +159,8 @@ class OpenSearchClient:
             logger.warning("No documents to index")
             return True
         
-        is_system = index_name.startswith("system_")
+        #is_system = index_name.startswith("system_")
+        is_system = index_name in settings.system_topics_list 
         actions = []
         for doc in documents:
             # Base source
@@ -259,7 +261,7 @@ class OpenSearchClient:
         all_success = True
         
         for topic_name in system_topics:
-            index_name = f"system_{topic_name}"
+            index_name = topic_name#f"system_{topic_name}"
             success = self.create_index(index_name)
             if not success:
                 all_success = False
