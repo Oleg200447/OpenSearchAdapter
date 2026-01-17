@@ -81,30 +81,30 @@ class DeletionConsumer:
         
         logger.info(f"Processing deletion request for doc_id {delete_msg.doc_id}", extra={
             "doc_id": delete_msg.doc_id,
-            "index_name": delete_msg.index_name,
-            "request_time": delete_msg.request_time
+            "topic_name": delete_msg.topic_name,
+            "upload_time": delete_msg.upload_time
         })
         
         try:
             # Delete documents asynchronously using thread pool
             success = await asyncio.to_thread(
                 opensearch_client.delete_documents_by_doc_id,
-                index_name=delete_msg.index_name,
+                index_name=delete_msg.topic_name,
                 doc_id=delete_msg.doc_id
             )
             
             if success:
                 logger.info(f"Successfully processed deletion request for doc_id {delete_msg.doc_id}", extra={
                     "doc_id": delete_msg.doc_id,
-                    "index_name": delete_msg.index_name
+                    "index_name": delete_msg.topic_name
                 })
             else:
-                logger.error(f"Failed to delete doc_id {delete_msg.doc_id} from {delete_msg.index_name}")
+                logger.error(f"Failed to delete doc_id {delete_msg.doc_id} from {delete_msg.topic_name}")
                 
         except Exception as e:
             logger.error(f"Error deleting doc_id {delete_msg.doc_id}: {e}", extra={
                 "doc_id": delete_msg.doc_id,
-                "index_name": delete_msg.index_name,
+                "index_name": delete_msg.topic_name,
                 "error": str(e)
             })
 

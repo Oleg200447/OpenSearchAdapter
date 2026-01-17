@@ -6,6 +6,7 @@ from src.logger import logger
 from src.embedding_client import embedding_client
 from src.opensearch_client import opensearch_client
 from src.consumers import document_consumer, deletion_consumer, index_creation_consumer, index_deletion_consumer
+from src.kafka_producer import kafka_producer
 
 
 @asynccontextmanager

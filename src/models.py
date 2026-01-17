@@ -57,10 +57,10 @@ class DocumentWithEmbedding(Document):
 class DeleteDocumentMessage(BaseModel):
     """Message for deleting documents by doc_id from an index."""
     doc_id: str = Field(..., description="Document ID to delete")
-    index_name: str = Field(..., description="Name of the index to delete from")
-    request_time: str = Field(..., description="Request timestamp")
+    topic_name: str = Field(..., description="Name of the index to delete from")
+    upload_time: str = Field(..., description="Request timestamp")
     
-    @field_validator("doc_id", "index_name")
+    @field_validator("doc_id", "topic_name")
     @classmethod
     def validate_not_empty(cls, v: str) -> str:
         if not v or not v.strip():
@@ -87,10 +87,15 @@ class DeleteIndexMessage(BaseModel):
     user_id: str = Field(..., description="User ID who owns the index")
     topic_name: str = Field(..., description="Name of the topic/index to delete")
     upload_time: str = Field(..., description="Request timestamp")
-    
+
     @field_validator("topic_name")
     @classmethod
     def validate_topic_name(cls, v: str) -> str:
         if not v or not v.strip():
             raise ValueError("topic_name cannot be empty")
         return v.strip()
+
+
+class DocumentStatusKafkaMessage(BaseModel):
+    """Kafka message for document status update."""
+    doc_id: str

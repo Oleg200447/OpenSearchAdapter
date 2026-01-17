@@ -9,9 +9,10 @@ from aiokafka import AIOKafkaConsumer
 from pydantic import ValidationError
 from src.config import settings
 from src.logger import logger
-from src.models import KafkaMessage, Document, DocumentWithEmbedding
+from src.models import KafkaMessage, Document, DocumentWithEmbedding, DocumentStatusKafkaMessage
 from src.embedding_client import embedding_client, ContextLengthError
 from src.opensearch_client import opensearch_client
+from src.kafka_producer import kafka_producer
 
 
 def get_first_n_words(text: str, n: int = 5000) -> str:
@@ -228,6 +229,14 @@ class DocumentConsumer:
                     "text_hash": text_hash,
                     "index_name": index_name
                 })
+
+                # Send document status update to Kafka
+                status_message = DocumentStatusKafkaMessage(doc_id=kafka_msg.doc_id)
+                try:
+                    await kafka_producer.send_message("document_status_updates", status_message.model_dump())
+                except Exception as e:
+                    logger.error(f"Failed to send document status update for {kafka_msg.doc_id}: {e}")
+
             else:
                 logger.error(f"Failed to index document {kafka_msg.doc_id}")
                 
